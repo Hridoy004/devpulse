@@ -7,6 +7,7 @@ import express, {
 } from "express";
 import globalErrorHandler from "./middleware/globalErrorHandler";
 import { authRouter } from "./modules/auth/auth.route";
+import { issueRouter } from "./modules/issues/issues.route";
 import { userRouter } from "./modules/user/user.route";
 
 const app: Application = express();
@@ -29,6 +30,7 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
+app.use("/api/issues", issueRouter);
 app.use("/api/users", userRouter);
 app.use("/api/auth", authRouter);
 
