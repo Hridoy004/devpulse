@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import jwt, { type JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import config from "../../config";
 import { pool } from "../../db";
 import type { IUser } from "./auth.interface";
@@ -60,53 +60,10 @@ const loginUserIntoDB = async (payload: {
     expiresIn: "1d",
   });
 
-  const refreshToken = jwt.sign(jwtpayload, config.refresh_secret as string, {
-    expiresIn: "1d",
-  });
-
   return { token: accessToken, user: jwtpayload };
-};
-
-const generateFreshToken = async (token: string) => {
-  if (!token) {
-    throw new Error("Unauthorized");
-  }
-
-  const decoded = jwt.verify(
-    token as string,
-    config.refresh_secret as string,
-  ) as JwtPayload;
-
-  const userData = await pool.query(
-    `
-       SELECT * FROM users WHERE email=$1
-      `,
-    [decoded.email],
-  );
-
-  const user = userData.rows[0];
-
-  if (userData.rows.length === 0) {
-    throw new Error("User not found!!");
-  }
-
-  const jwtpayload = {
-    id: user.id,
-    name: user.name,
-    role: user.role,
-    is_active: user.is_active,
-    email: user.email,
-  };
-
-  const accessToken = jwt.sign(jwtpayload, config.secret as string, {
-    expiresIn: "1d",
-  });
-
-  return { accessToken };
 };
 
 export const authService = {
   createUserIntoDB,
   loginUserIntoDB,
-  generateFreshToken,
 };
