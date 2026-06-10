@@ -15,12 +15,12 @@ const createIssueIntoDB = async (payload: IIssue) => {
   return result;
 };
 
-const getAllIssuesFromDB = async (query: {
+const getAllIssuesFromDB = async (payload: {
   sort?: string;
   type?: string;
   status?: string;
 }) => {
-  const { sort = "newest", type, status } = query;
+  const { sort = "newest", type, status } = payload;
 
   const conditions: string[] = [];
   const params: unknown[] = [];
@@ -60,7 +60,30 @@ const getAllIssuesFromDB = async (query: {
   }));
 };
 
+const getSingleIssueFromDB = async (id: string) => {
+  const issueResult = await pool.query(`SELECT * FROM issues WHERE id = $1`, [
+    id,
+  ]);
+
+  if (issueResult.rows.length === 0) {
+    throw new Error("Issue not found");
+  }
+
+  const issue = issueResult.rows[0];
+
+  const reporterResult = await pool.query(
+    `SELECT id, name, role FROM users WHERE id = $1`,
+    [issue.reporter_id],
+  );
+
+  const reporter = reporterResult.rows[0] || null;
+
+  const { reporter_id, ...rest } = issue;
+  return { ...rest, reporter };
+};
+
 export const issueService = {
   createIssueIntoDB,
   getAllIssuesFromDB,
+  getSingleIssueFromDB,
 };
