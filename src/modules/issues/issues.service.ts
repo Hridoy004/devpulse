@@ -52,9 +52,11 @@ const getAllIssuesFromDB = async (payload: {
 
   const reporterMap = new Map(reportersResult.rows.map((u) => [u.id, u]));
 
-  return issues.map(({ reporter_id, ...issue }) => ({
+  return issues.map(({ reporter_id, created_at, updated_at, ...issue }) => ({
     ...issue,
     reporter: reporterMap.get(reporter_id) || null,
+    created_at,
+    updated_at,
   }));
 };
 
@@ -74,10 +76,14 @@ const getSingleIssueFromDB = async (id: string) => {
     [issue.reporter_id],
   );
 
-  const reporter = reporterResult.rows[0] || null;
+  const { reporter_id, created_at, updated_at, ...rest } = issue;
 
-  const { reporter_id, ...rest } = issue;
-  return { ...rest, reporter };
+  return {
+    ...rest,
+    reporter: reporterResult.rows[0] || null,
+    created_at,
+    updated_at,
+  };
 };
 
 const updateIssueFromDB = async (
