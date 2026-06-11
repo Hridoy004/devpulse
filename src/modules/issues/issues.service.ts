@@ -5,10 +5,8 @@ const createIssueIntoDB = async (payload: IIssue) => {
   const { title, description, type, reporter_id } = payload;
 
   const result = await pool.query(
-    `
-      INSERT INTO issues(title, description, type, reporter_id) VALUES($1, $2, $3, $4)
-      RETURNING *
-    `,
+    `INSERT INTO issues(title, description, type, reporter_id) VALUES($1, $2, $3, $4)
+      RETURNING *`,
     [title, description, type, reporter_id],
   );
 
@@ -82,8 +80,49 @@ const getSingleIssueFromDB = async (id: string) => {
   return { ...rest, reporter };
 };
 
+const updateIssueFromDB = async (
+  payload: IIssue,
+  id: string,
+  userId: number,
+  role: string,
+) => {
+  const { title, description, type } = payload;
+
+  const existing = await pool.query(`SELECT * FROM issues WHERE id = $1`, [id]);
+
+  if (existing.rows.length === 0) {
+    throw new Error("Issue not found");
+  }
+
+  const issue = existing.rows[0];
+
+  if (role === "contributor") {
+    if (issue.reporter_id !== userId) {
+      throw new Error("You can only update your own issues");
+    }
+    if (issue.status !== "open") {
+      throw new Error("You can only update issues with open status");
+    }
+  }
+
+  const result = await pool.query(
+    `UPDATE issues
+     SET
+       title = COALESCE($1, title),
+       description = COALESCE($2, description),
+       type = COALESCE($3, type),
+       updated_at = NOW()
+     WHERE id = $4
+     RETURNING *`,
+    [title, description, type, id],
+  );
+
+  return result.rows[0];
+};
+
 export const issueService = {
   createIssueIntoDB,
   getAllIssuesFromDB,
   getSingleIssueFromDB,
+  updateIssueFromDB,
 };

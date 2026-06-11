@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { ROLES } from "../../types";
 import sendResponse from "../../utility/sendResponse";
 import { issueService } from "./issues.service";
 
@@ -67,8 +68,42 @@ const getSingleUser = async (req: Request, res: Response) => {
   }
 };
 
+const updateIssue = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { role, id: userId } = req.user!;
+
+  try {
+    const result = await issueService.updateIssueFromDB(
+      req.body,
+      id as string,
+      userId,
+      role as ROLES,
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Issue updated successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: error.message,
+      error: error,
+    });
+  }
+};
+
+const deleteIssue = async (req: Request, res: Response) => {
+  console.log("delete issue");
+};
+
 export const issueController = {
   createIssue,
   getAllIssues,
   getSingleUser,
+  updateIssue,
+  deleteIssue,
 };
